@@ -10,13 +10,13 @@ export class GameMoves {
     public created_at?: Date;
 
     @Column()
-    public playerId: string;
+    public player_id: string;
 
     @Column()
-    public generatedNumber: number;
+    public generated_number: number;
 
     @Column({ nullable: true })
-    public movePerformed: number;
+    public move_performed: number;
 
     @ManyToOne(() => GameSessions, ({ gameMoves }) => gameMoves)
     public gameSession: GameSessions;

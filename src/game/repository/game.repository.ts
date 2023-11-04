@@ -35,11 +35,11 @@ export class GameRepository {
      * @param gameSessionDTO gameSessionDTO
      * @returns returns newly added game session object from database
      */
-    public async addGameSession(gameSessionDTO: GameSession): Promise<GameSessions> {
+    public async addGameSession({ sessionId, playerOne }: GameSession): Promise<GameSessions> {
         return await this.gameSessionsRepository.save(
             this.gameSessionsRepository.create({
-                id: gameSessionDTO.sessionId,
-                playerOne: gameSessionDTO.playerOne
+                id: sessionId,
+                player_one: playerOne
             })
         ).catch(
             error => {
@@ -53,13 +53,10 @@ export class GameRepository {
      * @param gameSessionDTO gameSessionDTO
      * @returns returns updated game session object from database
      */
-    public async updateGameSession(gameSessionDTO: GameSession): Promise<GameSessions> {
-        const item = await this.getGameSession(gameSessionDTO.sessionId);
+    public async updateGameSession({ sessionId, playerTwo }: GameSession): Promise<GameSessions> {
+        const item = await this.getGameSession(sessionId);
 
-        if (!item)
-            throw new NotFoundException();
-
-        return await this.gameSessionsRepository.save({ ...item, playerTwo: gameSessionDTO.playerTwo })
+        return await this.gameSessionsRepository.save({ ...item, player_two: playerTwo })
             .catch(
                 error => {
                     throw new NotAcceptableException((error).toString());
@@ -76,14 +73,11 @@ export class GameRepository {
     public async addGameMove({ sessionId }: GameSession, { playerId, generatedNumber, movePerformed = null }: GameMove): Promise<GameMoves> {
         const currentGameSession = await this.getGameSession(sessionId);
 
-        if (!currentGameSession)
-            throw new NotFoundException();
-
         return await this.gameMovesRepository.save(
             this.gameMovesRepository.create({
-                playerId,
-                generatedNumber,
-                movePerformed,
+                player_id: playerId,
+                generated_number: generatedNumber,
+                move_performed: movePerformed,
                 gameSession: currentGameSession
             })
         ).catch(

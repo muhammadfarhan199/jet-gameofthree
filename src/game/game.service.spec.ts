@@ -141,8 +141,6 @@ describe('GameService', () => {
 
         const gameSessionUpdated = await gameService.performGameMove(clientIdTwo);
 
-        console.log(gameSessionUpdated);
-
         expect(gameSessionUpdated).toEqual(gameSession);
         expect(gameRepositoryMock.addGameMove).toHaveBeenCalled();
         expect(webSocketGatwayServiceMock.emitEventToClient).toHaveBeenCalledWith(

@@ -1,14 +1,12 @@
-import { Inject, Injectable, Logger, forwardRef } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException, forwardRef } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { WebSocketGatwayService } from '../gateway/gateway.service';
 import { GameMove, GameSession } from '../game/interfaces/game.interface';
 import { GameRepository } from './repository/game.repository';
 import { GameCacheService } from './game-cache.service';
+import { AI_PLAYER, AI_WAIT_TIME, CONSTANT_DIVIDEND, DIVIDE_OPERATIONS, GAME_BOT_TOPIC, GAME_EVENT_TOPIC } from './constants';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 
-
-const AI_PLAYER = 'AI';
-const DIVIDE_OPERATIONS: number[] = [-1, 0, 1];
-const CONSTANT_DIVIDEND: number = 3;
 @Injectable()
 export class GameService {
 
@@ -17,6 +15,7 @@ export class GameService {
         private readonly webSocketGateway: WebSocketGatwayService,
         private readonly gameMappings: GameCacheService,
         private readonly gameRepository: GameRepository,
+        private eventEmitter: EventEmitter2
     ) { }
 
     /**
@@ -64,7 +63,6 @@ export class GameService {
             return pendingGameSession;
         }
 
-
         // create a new session 
         const sessionId = uuidv4();
 
@@ -86,10 +84,11 @@ export class GameService {
             'Waiting for opponent to join the game.'
         );
 
-        // Set a timer for 15 seconds and initiate automated response by AI bot if no player two joins
-        setTimeout(async () => {
-            await this.simulateAIBot(sessionId);
-        }, 15000);
+        // check game bot assigment
+        this.eventEmitter.emit(
+            GAME_BOT_TOPIC,
+            sessionId
+        );
 
         return gameSession;
     }
@@ -184,6 +183,9 @@ export class GameService {
                     // this player has won the game and we need to notify
                     Logger.log(`Player ${currentMove.playerId} has won the game.`);
 
+                    // now we clear this from active games
+                    this.gameMappings.cleanGameMappings(currentSession);
+
                     this.emitClientEvent(
                         currentMove.playerId,
                         'Congratulations! You have won the game. Hit move to start a new game.'
@@ -192,13 +194,9 @@ export class GameService {
                         lastMove.playerId,
                         'Opponent has won the game. Hit move to start a new game.'
                     );
-
-                    // now we clear this from active games
-                    this.gameMappings.cleanGameMappings(currentSession);
                 } else {
                     this.gameMappings.setCurrentGame(currentSession);
                 }
-
             } else {
                 // this has to be the first move
                 const firstMove: GameMove = {
@@ -230,7 +228,7 @@ export class GameService {
 
             // Logic for AI automated response. recursively calls itself to make the next move
             // identify the players to handle AI vs user based responses
-            if (currentSession.playerTwo === AI_PLAYER && clientId !== AI_PLAYER) {
+            if (currentGames.has(currentSession.sessionId) && currentSession.playerTwo === AI_PLAYER && clientId !== AI_PLAYER) {
                 // this call is made by actual user, so that we can directly send response from here
                 this.performGameMove(AI_PLAYER);
             }
@@ -273,7 +271,7 @@ export class GameService {
      */
     private emitClientEvent(clientId: string, message: string) {
         if (clientId !== AI_PLAYER) { // dont emit event to AI
-            this.webSocketGateway.emitEventToClient(clientId, 'gameOfThree', { message });
+            this.webSocketGateway.emitEventToClient(clientId, GAME_EVENT_TOPIC, { message });
         }
     }
 
@@ -307,5 +305,15 @@ export class GameService {
             generatedNumber: (gameMove.generatedNumber + validOperation) / CONSTANT_DIVIDEND,
             movePerformed: validOperation
         };
+    }
+
+    @OnEvent(GAME_BOT_TOPIC)
+    private handleGameBotAssign(sessionId: string): void {
+        // Set a timer for 15 seconds and initiate automated response by AI bot if no player two joins
+        Logger.log(`Set a timer for 10 seconds and initiate automated response by AI bot if no player two joins`);
+
+        setTimeout(async () => {
+            await this.simulateAIBot(sessionId);
+        }, AI_WAIT_TIME);
     }
 }

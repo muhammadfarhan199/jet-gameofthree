@@ -11,6 +11,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { GameService } from '../game/game.service';
 import { GameSession } from '../game/interfaces/game.interface';
+import { GAME_EVENT_TOPIC } from 'src/game/constants';
 
 @WebSocketGateway()
 @Injectable()
@@ -32,14 +33,20 @@ export class WebSocketGatwayService implements OnGatewayConnection, OnGatewayDis
      * Handles new client connection on socket
      * @param client client
      */
-    public handleConnection(client: Socket): void {
-        // Store the client's information when they connect
-        this.clients.set(client.id, client);
+    public async handleConnection(client: Socket): Promise<void> {
+        try {
+            // Store the client's information when they connect
+            this.clients.set(client.id, client);
 
-        Logger.log(`${client.id} has connected.`)
+            Logger.log(`${client.id} has connected.`);
 
-        // trigger game start
-        this.gameService.startGame(client.id);
+            // trigger game start
+            await this.gameService.startGame(client.id);
+        }
+        catch (e) {
+            Logger.log('Something went wrong!');
+            client.emit(GAME_EVENT_TOPIC, { message: 'Unfortunately game has stopped. Please start a new game.' });
+        }
     }
 
     /**
@@ -47,11 +54,17 @@ export class WebSocketGatwayService implements OnGatewayConnection, OnGatewayDis
      * @param client client
      */
     public handleDisconnect(client: Socket): void {
-        // Remove the client from the map when they disconnect
-        this.clients.delete(client.id);
+        try {
+            // Remove the client from the map when they disconnect
+            this.clients.delete(client.id);
 
-        // if this client was actively playing a game then identify game users
-        this.gameService.identifyClientDisconnectAndNotify(client.id);
+            // if this client was actively playing a game then identify game users
+            this.gameService.identifyClientDisconnectAndNotify(client.id);
+        }
+        catch (e) {
+            Logger.log('Something went wrong!');
+            client.emit(GAME_EVENT_TOPIC, { message: 'Unfortunately game has stopped. Please start a new game.' });
+        }
     }
 
     /**
@@ -75,12 +88,18 @@ export class WebSocketGatwayService implements OnGatewayConnection, OnGatewayDis
      * @param client client
      */
     @SubscribeMessage('move')
-    public handleEvent(
+    public async handleEvent(
         @MessageBody() data: GameSession,
         @ConnectedSocket() client: Socket
-    ): void {
-        // Handle the move from each one of the players
-        this.gameService.performGameMove(client.id);
+    ): Promise<void> {
+        try {
+            await this.gameService.performGameMove(client.id);
+        }
+        catch (e) {
+            Logger.log('Something went wrong!');
+            client.emit(GAME_EVENT_TOPIC, { message: 'Unfortunately game has stopped. Please start a new game.' });
+            // notify other involved users about this problem and clear cache store
+            this.gameService.identifyClientDisconnectAndNotify(client.id);
+        }
     }
-
 }

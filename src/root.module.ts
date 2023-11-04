@@ -1,27 +1,34 @@
 import { Module } from '@nestjs/common';
 import { GatewayModule } from './gateway/gateway.module';
 import { GameModule } from './game/game.module';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { GameSessions } from './game/models/game-session.entity';
 import { GameMoves } from './game/models/game-moves.entity';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
-    GatewayModule, 
+    GatewayModule,
     GameModule,
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.HOST,
-      port: parseInt(process.env.PORT),
-      username: process.env.POSTGRES_USER,
-      password: process.env.POSTGRES_PASSWORD,
-      entities: [GameSessions, GameMoves],
-      database: process.env.POSTGRES_DATABASE,
-      synchronize: true,
-      logging: false
-    })
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) =>
+      ({
+        type: 'postgres',
+        host: configService.get<string>('HOST'),
+        port: configService.get<number>('PORT'),
+        username: configService.get<string>('POSTGRES_USER'),
+        password: configService.get<string>('POSTGRES_PASSWORD'),
+        database: configService.get<string>('POSTGRES_DATABASE'),
+        synchronize: true,
+        logging: false,
+        entities: [GameSessions, GameMoves],
+      } as TypeOrmModuleOptions),
+      inject: [ConfigService],
+    }),
+    ConfigModule.forRoot({ cache: true })
   ],
   controllers: [],
   providers: [],
 })
-export class RootModule {}
+export class RootModule { }

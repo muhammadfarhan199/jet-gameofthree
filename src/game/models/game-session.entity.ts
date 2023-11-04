@@ -13,10 +13,10 @@ export class GameSessions {
     public updated_at?: Date;
 
     @Column()
-    public playerOne: string;
+    public player_one: string;
 
     @Column({ nullable: true })
-    public playerTwo: string;
+    public player_two: string;
 
     @OneToMany(() => GameMoves, ({ gameSession }) => gameSession)
     public gameMoves: GameMoves[];
