@@ -49,3 +49,17 @@ To run unit tests please run following command:
 ```bash
 $ npm run test
 ```
+
+### Gameplay
+
+Once server is up and running , you can either open 2 postman instances and connect as 2 different clients or you can expose your local server to cloud using 'ngrok'.
+
+```bash
+$ ngrok http 3000
+```
+
+Now you can use the url provided to connect from any other machine and play.
+
+A simple game with AI bot (without fancy UI) looks like,
+
+<img src="./resources/jet-gameplay.png" width="900"/>

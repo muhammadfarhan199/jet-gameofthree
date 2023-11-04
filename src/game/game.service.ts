@@ -1,11 +1,10 @@
-import { Inject, Injectable, Logger, NotFoundException, forwardRef } from '@nestjs/common';
+import { Inject, Injectable, Logger, forwardRef } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { WebSocketGatwayService } from '../gateway/gateway.service';
 import { GameMove, GameSession } from '../game/interfaces/game.interface';
 import { GameRepository } from './repository/game.repository';
 import { GameCacheService } from './game-cache.service';
-import { AI_PLAYER, AI_WAIT_TIME, CONSTANT_DIVIDEND, DIVIDE_OPERATIONS, GAME_BOT_TOPIC, GAME_EVENT_TOPIC } from './constants';
-import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+import { AI_PLAYER, AI_WAIT_TIME, CONSTANT_DIVIDEND, DIVIDE_OPERATIONS, GAME_EVENT_TOPIC } from './constants';
 
 @Injectable()
 export class GameService {
@@ -14,8 +13,7 @@ export class GameService {
         @Inject(forwardRef(() => WebSocketGatwayService))
         private readonly webSocketGateway: WebSocketGatwayService,
         private readonly gameMappings: GameCacheService,
-        private readonly gameRepository: GameRepository,
-        private eventEmitter: EventEmitter2
+        private readonly gameRepository: GameRepository
     ) { }
 
     /**
@@ -84,11 +82,12 @@ export class GameService {
             'Waiting for opponent to join the game.'
         );
 
-        // check game bot assigment
-        this.eventEmitter.emit(
-            GAME_BOT_TOPIC,
-            sessionId
-        );
+        // Set a timer for 15 seconds and initiate automated response by AI bot if no player two joins
+        Logger.log(`Set a timer for 10 seconds and initiate automated response by AI bot if no player two joins`);
+
+        setTimeout(async () => {
+            await this.simulateAIBot(sessionId);
+        }, AI_WAIT_TIME);
 
         return gameSession;
     }
@@ -305,15 +304,5 @@ export class GameService {
             generatedNumber: (gameMove.generatedNumber + validOperation) / CONSTANT_DIVIDEND,
             movePerformed: validOperation
         };
-    }
-
-    @OnEvent(GAME_BOT_TOPIC)
-    private handleGameBotAssign(sessionId: string): void {
-        // Set a timer for 15 seconds and initiate automated response by AI bot if no player two joins
-        Logger.log(`Set a timer for 10 seconds and initiate automated response by AI bot if no player two joins`);
-
-        setTimeout(async () => {
-            await this.simulateAIBot(sessionId);
-        }, AI_WAIT_TIME);
     }
 }

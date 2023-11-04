@@ -4,6 +4,7 @@ import { WebSocketGatwayService } from '../gateway/gateway.service';
 import { GameCacheService } from './game-cache.service';
 import { GameRepository } from './repository/game.repository';
 import { GameSession } from './interfaces/game.interface';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 jest.mock('uuid', () => ({ v4: () => '123456789' }));
 jest.useFakeTimers();
@@ -42,7 +43,7 @@ describe('GameService', () => {
                 {
                     provide: GameRepository,
                     useValue: gameRepositoryMock,
-                },
+                }
             ],
         }).compile();
 
