@@ -8,9 +8,15 @@ They send the newly genrated number back and forth until one of the player hits 
 ### Architecture
 
 I am using NestJS to build this game as a backend service by utilising Websockets. I have a server up and running which contains a websocket gateway to faciliate multiple number of users to connect to server simultaneously.
+
+
 Then I have a main GameService which takes care of the game operations performed by either party in a single game session.
 For high latency I am using a cache server to keep track of clients and their active sessions along with game and gameMoves information. I am using in-memory cache as a mock to using RedisCache Server.
+
+
 I have also implemented a cold storage e.g. postgres database which keeps records as an async operation for further use e.g, reporting, dashboard, leaderboards etc.
+
+
 There is an option to play the game with AI as well so once the first player connects, if it remains idle (doesn't get connected to other active players) for next 10 seconds, an AI bots joins the game and plays normally with user.
 After every game is finished, players can continue to play again or disconnect.
 
