@@ -11,7 +11,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { GameService } from '../game/game.service';
 import { GameSession } from '../game/interfaces/game.interface';
-import { GAME_EVENT_TOPIC } from 'src/game/constants';
+import { GAME_EVENT_TOPIC } from '../game/constants/index';
 
 @WebSocketGateway()
 @Injectable()
