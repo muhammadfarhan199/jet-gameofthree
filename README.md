@@ -52,7 +52,7 @@ $ npm run test
 
 ### Gameplay
 
-Once server is up and running , you can either open 2 postman instances and connect as 2 different clients or you can expose your local server to cloud using 'ngrok'.
+Once server is up and running , you can either open 2 postman instances and connect as 2 different clients. (optional: or you can expose your local server to cloud using 'ngrok'.)
 
 ```bash
 $ ngrok http 3000
